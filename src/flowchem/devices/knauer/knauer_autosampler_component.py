@@ -450,9 +450,15 @@ class AutosamplerPump(SyringePump):
         return status in self._BUSY_STATUSES
 
     async def is_idle(self) -> bool:
-        """Check whether the built-in syringe/syringe valve has finished moving."""
+        """Check whether the built-in syringe/syringe valve has finished moving.
+
+        Must agree with is_pumping()/_BUSY_STATUSES: set_to_position(HOME/END/
+        EXCHANGE) reports MOVING_SYRINGE_TO_*_POSITION while in motion, not
+        SYRINGE_OR_SYRINGE_VALVE_RUNNING - checking only the latter here would
+        report idle while the syringe is still moving to position.
+        """
         status = await self.hw_device.get_status()
-        return status != "SYRINGE_OR_SYRINGE_VALVE_RUNNING"
+        return status not in self._BUSY_STATUSES
 
     async def stop(self) -> bool:
         """Stop the simulated pump operation."""
